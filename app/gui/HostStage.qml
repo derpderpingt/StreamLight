@@ -33,6 +33,9 @@ Item {
     // Put to sleep by this client and not polled until Wake (6.2.0): reads "Asleep" rather
     // than "Offline", because offline is exactly what we cannot know about it.
     property bool   asleep: false
+    // Also serves Punktfunk's native protocol (6.4.0). Informational for now: streaming still
+    // goes over GameStream, which is how the host was added.
+    property bool   punktfunk: false
     property bool   serverSupported: true
     property string address: ""
     property string tailscaleAddress: ""
@@ -756,6 +759,8 @@ Item {
                     var c = [{ text: stage._stateLabel, dot: stage._stateColor }]
                     if (stage._authLabel.length > 0)
                         c.push({ text: stage._authLabel, dot: stage._authColor })
+                    if (stage.punktfunk)
+                        c.push({ text: qsTr("Punktfunk"), dot: "#ffffff" })
                     // Available is a bright white dot, not the grey the secondary text uses:
                     // it is reporting a route that is there and usable, and at 8px a muted
                     // grey read as "off". Active keeps the accent, which is the stronger

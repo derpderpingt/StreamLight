@@ -212,6 +212,7 @@ ComputerManager::ComputerManager(StreamingPreferences* prefs)
     : m_Prefs(prefs),
       m_PollingRef(0),
       m_MdnsBrowser(nullptr),
+      m_PunktfunkBrowser(nullptr),
       m_CompatFetcher(nullptr),
       m_NeedsDelayedFlush(false)
 {
@@ -326,6 +327,8 @@ ComputerManager::~ComputerManager()
     // Delete the browser to stop discovery
     delete m_MdnsBrowser;
     m_MdnsBrowser = nullptr;
+    delete m_PunktfunkBrowser;
+    m_PunktfunkBrowser = nullptr;
 
     // Interrupt polling
     for (ComputerPollingEntry* entry : std::as_const(m_PollEntries)) {
@@ -476,6 +479,16 @@ void ComputerManager::startPolling()
                     this, &ComputerManager::handleMdnsServiceResolved);
             m_PendingResolution.append(pendingComputer);
         });
+
+        // Punktfunk's native server (6.4.0). Not a way to add hosts: a Punktfunk host is added
+        // through its GameStream side above like any other, and this only marks it. Nothing
+        // here opens a connection, so it is safe for a host held asleep as well.
+        m_PunktfunkBrowser = new QMdnsEngine::Browser(m_MdnsServer.data(), "_punktfunk._udp.local.");
+        connect(m_PunktfunkBrowser, &QMdnsEngine::Browser::serviceAdded,
+                this, &ComputerManager::handlePunktfunkAdvert);
+        // TXT can arrive after the SRV record, which is an update rather than an add.
+        connect(m_PunktfunkBrowser, &QMdnsEngine::Browser::serviceUpdated,
+                this, &ComputerManager::handlePunktfunkAdvert);
     }
     else {
         qWarning() << "mDNS is disabled by user preference";
@@ -903,6 +916,8 @@ void ComputerManager::stopPollingAsync()
     // Delete the browser and server to stop discovery and refresh polling
     delete m_MdnsBrowser;
     m_MdnsBrowser = nullptr;
+    delete m_PunktfunkBrowser;
+    m_PunktfunkBrowser = nullptr;
     m_MdnsServer.reset();
 
     // Interrupt all threads, but don't wait for them to terminate
@@ -1385,6 +1400,56 @@ bool ComputerManager::setHeldAsleep(QString uuid, bool held)
     saveHost(computer);
     emit computerStateChanged(computer);
     return true;
+}
+
+void ComputerManager::handlePunktfunkAdvert(const QMdnsEngine::Service& service)
+{
+    const QMap<QByteArray, QByteArray> txt = service.attributes();
+
+    // Another protocol revision is not something this build can speak to.
+    const QString proto = QString::fromUtf8(txt.value("proto"));
+    if (!proto.isEmpty() && !proto.startsWith(QLatin1String("punktfunk/"))) {
+        return;
+    }
+
+    // TXT `id` is the host's GameStream uniqueid. Without it (TXT not in yet, or a host too
+    // old to send one) there is nothing safe to match on: an address can belong to a
+    // different machine by the next DHCP lease.
+    const QString id = QString::fromUtf8(txt.value("id"));
+    if (id.isEmpty()) {
+        return;
+    }
+
+    NvComputer* computer = nullptr;
+    {
+        QReadLocker lock(&m_Lock);
+        computer = m_KnownHosts.value(id);
+    }
+    if (computer == nullptr) {
+        // Punktfunk running without `serve --gamestream`: nothing StreamLight can stream from
+        // yet, so it is logged and not added.
+        qInfo() << "Punktfunk host" << service.name()
+                << "has no GameStream side known to StreamLight; enable GameStream on it to add it";
+        return;
+    }
+
+    const QString fp = QString::fromUtf8(txt.value("fp")).toLower();
+    const QString pairing = QString::fromUtf8(txt.value("pair"));
+    {
+        QWriteLocker cLock(&computer->lock);
+        if (computer->punktfunkPort == service.port() &&
+                computer->punktfunkFingerprint == fp &&
+                computer->punktfunkPairing == pairing) {
+            return;
+        }
+        computer->punktfunkPort = service.port();
+        computer->punktfunkFingerprint = fp;
+        computer->punktfunkPairing = pairing;
+    }
+    qInfo() << computer->name << "is a Punktfunk host, punktfunk/1 on port" << service.port();
+
+    saveHost(computer);
+    emit computerStateChanged(computer);
 }
 
 bool ComputerManager::setStreamTweakEnabled(QString uuid, bool enabled)

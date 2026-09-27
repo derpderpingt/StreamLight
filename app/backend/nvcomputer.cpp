@@ -34,6 +34,9 @@
 #define SER_STAGEOPACITY "stageopacity"
 #define SER_STENABLED "streamtweakenabled"
 #define SER_HELDASLEEP "heldasleep"
+#define SER_PFPORT "punktfunkport"
+#define SER_PFFP "punktfunkfp"
+#define SER_PFPAIR "punktfunkpair"
 
 NvComputer::NvComputer(QSettings& settings)
 {
@@ -62,6 +65,9 @@ NvComputer::NvComputer(QSettings& settings)
     // Absent on every host saved before 6.0.0: 0, which means "use the default".
     this->stageOpacity   = settings.value(SER_STAGEOPACITY, 0).toInt();
     this->heldAsleep     = settings.value(SER_HELDASLEEP, false).toBool();
+    this->punktfunkPort  = static_cast<quint16>(settings.value(SER_PFPORT, 0).toUInt());
+    this->punktfunkFingerprint = settings.value(SER_PFFP).toString();
+    this->punktfunkPairing     = settings.value(SER_PFPAIR).toString();
 
     // ⚠️ Absence of the key is NOT the same as false, and reading it as false would be a
     // regression shipped in a release: everyone already using StreamTweak would upgrade and
@@ -185,6 +191,9 @@ void NvComputer::serialize(QSettings& settings, bool serializeApps) const
     settings.setValue(SER_STAGEOPACITY, stageOpacity);
     settings.setValue(SER_STENABLED, streamTweakEnabled);
     settings.setValue(SER_HELDASLEEP, heldAsleep);
+    settings.setValue(SER_PFPORT, punktfunkPort);
+    settings.setValue(SER_PFFP, punktfunkFingerprint);
+    settings.setValue(SER_PFPAIR, punktfunkPairing);
 
     // Avoid deleting an existing applist if we couldn't get one
     if (!appList.isEmpty() && serializeApps) {
@@ -220,6 +229,9 @@ bool NvComputer::isEqualSerialized(const NvComputer &that) const
            this->stageOpacity == that.stageOpacity &&
            this->streamTweakEnabled == that.streamTweakEnabled &&
            this->heldAsleep == that.heldAsleep &&
+           this->punktfunkPort == that.punktfunkPort &&
+           this->punktfunkFingerprint == that.punktfunkFingerprint &&
+           this->punktfunkPairing == that.punktfunkPairing &&
            this->appList == that.appList;
 }
 

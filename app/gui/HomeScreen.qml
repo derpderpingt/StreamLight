@@ -1221,6 +1221,7 @@ FocusScope {
                     statusUnknown:     model.statusUnknown,
                     wakeable:          model.wakeable,
                     asleep:            model.asleep,
+                    punktfunk:         model.punktfunk,
                     serverSupported:   model.serverSupported,
                     details:           model.details,
                     address:           model.address,
@@ -1812,6 +1813,7 @@ FocusScope {
         statusUnknown:     _h ? _h.statusUnknown     : false
         wakeable:          _h ? _h.wakeable          : false
         asleep:            _h ? _h.asleep            : false
+        punktfunk:         _h ? _h.punktfunk         : false
         serverSupported:   _h ? _h.serverSupported   : true
         hasTailscale:      _h ? _h.hasTailscale      : false
         tailscaleActive:   _h ? _h.tailscaleActive   : false

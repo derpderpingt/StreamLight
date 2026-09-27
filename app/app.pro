@@ -462,6 +462,25 @@ config_SL {
 win32 {
     HEADERS += streaming/video/ffmpeg-renderers/dxutil.h
 }
+
+# Punktfunk's native punktfunk/1 protocol (6.4.0), off unless asked for:
+#   qmake CONFIG+=punktfunk PUNKTFUNK_DIR=<punktfunk checkout>
+# after `cargo build -p punktfunk-core --features quic --release` in that checkout. The decode
+# unit converter is always built: it has no dependency on the library. See docs/punktfunk.md.
+SOURCES += streaming/punktfunk/punktfunkdecodeunit.cpp
+HEADERS += streaming/punktfunk/punktfunkdecodeunit.h
+punktfunk {
+    isEmpty(PUNKTFUNK_DIR): error(CONFIG+=punktfunk needs PUNKTFUNK_DIR set to a punktfunk checkout)
+    message(Punktfunk native protocol enabled from $$PUNKTFUNK_DIR)
+
+    DEFINES += HAVE_PUNKTFUNK PUNKTFUNK_FEATURE_QUIC
+    INCLUDEPATH += $$PUNKTFUNK_DIR/include
+    # punktfunk_core.lib is the import library for punktfunk_core.dll, which ships beside the exe.
+    LIBS += -L$$PUNKTFUNK_DIR/target/release -lpunktfunk_core
+
+    SOURCES += streaming/punktfunk/punktfunkconnection.cpp
+    HEADERS += streaming/punktfunk/punktfunkconnection.h
+}
 win32:!winrt {
     message(DXVA2 and D3D11VA renderers selected)
 

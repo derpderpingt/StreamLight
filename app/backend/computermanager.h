@@ -283,6 +283,8 @@ private slots:
 
     void handleMdnsServiceResolved(MdnsPendingComputer* computer, QVector<QHostAddress>& addresses);
 
+    void handlePunktfunkAdvert(const QMdnsEngine::Service& service);
+
 private:
     void saveHosts();
 
@@ -300,6 +302,7 @@ private:
     QHash<QString, NvComputer> m_LastSerializedHosts; // Protected by m_DelayedFlushMutex
     QSharedPointer<QMdnsEngine::Server> m_MdnsServer;
     QMdnsEngine::Browser* m_MdnsBrowser;
+    QMdnsEngine::Browser* m_PunktfunkBrowser;
     QVector<MdnsPendingComputer*> m_PendingResolution;
     CompatFetcher m_CompatFetcher;
     DelayedFlushThread* m_DelayedFlushThread;
