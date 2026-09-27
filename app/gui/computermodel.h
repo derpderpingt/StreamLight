@@ -50,7 +50,8 @@ class ComputerModel : public QAbstractListModel
         StageSeedRole,
         StageOpacityRole,
         StreamTweakEnabledRole,
-        AsleepRole          // put to sleep by this client, not polled until Wake (6.2.0)
+        AsleepRole,         // put to sleep by this client, not polled until Wake (6.2.0)
+        PunktfunkRole       // also serves punktfunk/1, seen over mDNS (6.4.0)
     };
 
 public:

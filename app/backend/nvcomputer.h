@@ -181,6 +181,19 @@ public:
     // this device itself woke up used to wake the host with it (measured 19/09/2026, §77).
     // Cleared only by Wake. Persisted, so a restart of StreamLight does not wake it either.
     bool heldAsleep = false;
+
+    // The host also runs Punktfunk's native punktfunk/1 server (6.4.0). Learned from its
+    // `_punktfunk._udp` mDNS advert, whose TXT `id` is the same uniqueid the host's GameStream
+    // side reports as serverinfo `uniqueid` — so it is matched by uuid, never by address. The
+    // serverinfo document itself is a Sunshine clone and cannot tell the two apart.
+    //
+    // 0 means "not seen as a Punktfunk host". The port and fingerprint are what the native
+    // session path needs to connect and pin the host's certificate; the pairing mode is TXT
+    // `pair` verbatim ("required" | "optional"). Persisted, and never touched by update():
+    // a serverinfo poll knows nothing about them.
+    quint16 punktfunkPort = 0;
+    QString punktfunkFingerprint;
+    QString punktfunkPairing;
     // Remember to update isEqualSerialized() when adding fields here!
 
     // Set when the QSettings constructor had to repair persisted addresses. Deliberately

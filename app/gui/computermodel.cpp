@@ -111,6 +111,8 @@ QVariant ComputerModel::data(const QModelIndex& index, int role) const
         return computer->streamTweakEnabled;
     case AsleepRole:
         return computer->heldAsleep;
+    case PunktfunkRole:
+        return computer->punktfunkPort != 0;
     case DetailsRole: {
         QString state, pairState;
 
@@ -196,6 +198,7 @@ QHash<int, QByteArray> ComputerModel::roleNames() const
     names[StageOpacityRole] = "stageOpacity";
     names[StreamTweakEnabledRole] = "streamTweakEnabled";
     names[AsleepRole] = "asleep";
+    names[PunktfunkRole] = "punktfunk";
 
     return names;
 }
